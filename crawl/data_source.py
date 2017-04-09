@@ -274,6 +274,8 @@ def get_loupan():
         page += 1
         if page > 2084:
             break
+        f = open("C:\Users\leoz\Desktop\hacker2017project\groupId.txt", 'w')
+        f.write(",".join(loupan_list))
 
 # print "获取代理:", time.time()
 # # proxy_list = get_proxy()
@@ -289,3 +291,4 @@ get_loupan()
 print loupan_list
 loupan_string = ",".join(loupan_list)
 print loupan_string
+
