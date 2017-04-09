@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import sys
 import random
 import time
+import socket
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -41,6 +42,9 @@ def get_proxy():
             except Exception, e:
                 print "not ok"
                 continue
+            except socket.timeout as e:
+                print "time out"
+                print type(e)  # catched
             print tdlist[1].string  # 这里提取IP值
             print tdlist[2].string  # 这里提取端口值
     proxy_self = {'http': "127.0.0.1:80"}
@@ -79,9 +83,14 @@ def get_news():
                     break
                 for item in items:
                     number += 1
-                    print number, item[0], item[1]
+                    print number,time.time(), item[0], item[1]
                     # news_dic[item[0]] = item[1]
                     write_news_content(item[0])
+            except socket.timeout as e:
+                print "time out"
+                print type(e)  # catched
+            except socket.error as e:
+                print "socket error"
             except urllib2.URLError, e:
                 print "get_news try except "
                 if hasattr(e,"code"):
@@ -93,11 +102,11 @@ def get_news():
 #获取百科的url和标题
 def get_baike():
     number = 0
-    page = 1
+    page = 500
     number = 0
     while True:
         number += 1
-        if number % 50 ==0:
+        if number % 20 ==0:
             print "crawler have a rest"
             time.sleep(60 * 1)
         print time.localtime()
@@ -114,10 +123,14 @@ def get_baike():
                 break
             for item in items:
                 number += 1
-                print number, item[0], item[1]
+                print number, time.time(), item[0], item[1]
                 # baike_dic[item[0]] = item[1]
                 write_baike_content(item[0])
-
+        except socket.timeout as e:
+            print "time out"
+            print type(e)  # catched
+        except socket.error as e:
+            print "socket error"
         except urllib2.URLError, e:
             if hasattr(e, "code"):
                 print e.code
@@ -157,12 +170,19 @@ def write_news_content(value):
             if len(content_article) > 0:
                 fo = open(file_path, "w")
                 fo.write(content_article)
+    except socket.timeout as e:
+        print "time out"
+        print type(e)  # catched
+    except socket.error as e:
+        print "socket error"
     except urllib2.URLError, e:
         print "write_news_content write end"
         if hasattr(e, "code"):
             print e.code
         if hasattr(e, "reason"):
             print e.reason
+    except urllib2.HTTPError, e:
+        print "HTTPError"
 
 
 #获取百科的内容
@@ -188,6 +208,11 @@ def write_baike_content(value):
             if len(content_article) > 0:
                 fo = open(file_path, "w")
                 fo.write(content_article)
+    except socket.timeout as e:
+        print "time out"
+        print type(e)  # catched
+    except socket.error as e:
+        print "socket error"
     except urllib2.URLError, e:
         if hasattr(e, "code"):
             print e.code
@@ -210,13 +235,57 @@ def get_baike_filepath(value):
     return result
 
 
+def get_loupan():
+    page = 1
+    number = 0
+    while True:
+        time.sleep(5)
+        number += 1
+        if number % 20 == 0:
+            print "crawler have a rest"
+            time.sleep(60 * 1)
+        print time.localtime()
+        url = 'http://house.focus.cn/search/index_p' + str(page) + '.html'
+        user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+        headers = {'User-Agent': user_agent}
+        try:
+            request = urllib2.Request(url, headers=headers)
+            response = urllib2.urlopen(request)
+            content = response.read().decode('utf-8')
+            pattern = re.compile(
+                '<div class="lp-t-title">.*?<a class="_click" type="1" target="_blank".*?href="http://house.focus.cn/loupan/(.*?).html',
+                re.S)
+            items = re.findall(pattern, content)
+            if len(items) == 0:
+                break
+            for item in items:
+                loupan_list.add(item)
+                print number, item
+        except socket.timeout as e:
+            print "time out"
+            print type(e)  # catched
+        except socket.error as e:
+            print "socket error"
+        except urllib2.URLError, e:
+            if hasattr(e, "code"):
+                print e.code
+            if hasattr(e, "reason"):
+                print e.reason
+        page += 1
+        if page > 2084:
+            break
+
 # print "获取代理:", time.time()
 # # proxy_list = get_proxy()
 # print "获取代理结束:", time.time()
-print "获取百科:", time.time()
+# print "获取百科:", time.time()
 # get_baike()
-print "获取新闻结束:", time.time()
-print "获取新闻:", time.time()
-get_news()
-print "获取新闻结束:", time.time()
-
+# print "获取新闻结束:", time.time()
+# print "获取新闻:", time.time()
+# get_news()
+# print "获取新闻结束:", time.time()
+loupan_list = set()
+get_loupan()
+print loupan_list
+loupan_string = ",".join(loupan_list)
+print loupan_string
